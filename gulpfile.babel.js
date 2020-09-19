@@ -1,10 +1,12 @@
 import gulp from 'gulp';
-import { series } from 'gulp';
+import { series , parallel } from 'gulp';
 import yargs from 'yargs';
 import sass from 'gulp-sass';
 import cleanCSS from 'gulp-clean-css';
 import gulpif from 'gulp-if';
 import imagemin from 'gulp-imagemin';
+import del from 'del';
+import webpack from 'webpack-stream';
 
 const  PRODUCTION = yargs.argv.prod;
 
@@ -17,11 +19,17 @@ const paths = {
     src: 'src/assets/images/**/*.{jpg,jpeg,png,svg,gif}',
     dest: 'dist/assets/images'
   },
+  scripts:{
+    src: 'src/assets/js/bundle.js',
+    dest: 'dist/assets/js'
+  },
   other:{
     src: ['src/assets/**/*', '!src/assets/{images,js,scss}', '!src/assets/{images.js,scss}/**/*'],
-    dest: 'dest/assets'
+    dest: 'dist/assets'
   }
 }
+
+export const clean = () => del(["dist"])
 
 export const styles = () =>{
   return gulp.src(paths.styles.src)
@@ -38,6 +46,8 @@ export const images = ()=>{
 
 export const watch = ()=>{
   gulp.watch('src/assets/scss/**/*.scss', styles);
+  gulp.watch(paths.images.src, images);
+  gulp.watch(paths.other.src, copy);
 }
 
 export const copy = ()=>{
@@ -45,4 +55,32 @@ export const copy = ()=>{
          .pipe(gulp.dest(paths.other.dest))
 }
 
-  
+export const scripts = () =>{
+  return gulp.src(paths.scripts.src)
+         .pipe(webpack({
+           module: {
+            rules:[
+               {
+                 test: /\.js$/,
+                 exclude: /(node_modules|bower_components)/,
+                 use: {
+                   loader: 'babel-loader',
+                   options:{
+                     presets : ['@babel/preset-env']
+                   }
+                 }
+               }
+             ]
+           },
+           output: {
+            filename: 'bundle.js',
+          },
+           
+         }))
+         .pipe(gulp.dest(paths.scripts.dest))
+}
+
+export const dev = series(clean, parallel(styles, images, copy), watch)
+export const build = series(clean, parallel(styles, images, copy))
+
+export default dev;
