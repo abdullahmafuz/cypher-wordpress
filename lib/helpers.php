@@ -1,6 +1,6 @@
 <?php
 
-function cyphernex_post_meta(){
+function __themename_post_meta(){
     /* translators: %s Post Date */
     printf(
         esc_html__( 'posted on %s', 'Cypher Nex' ),
@@ -14,7 +14,7 @@ function cyphernex_post_meta(){
     );
 }
 
-function cyphernex_readmore_link(){
+function __themename_readmore_link(){
 
     echo '<a href="' . esc_url(get_the_permalink()) . '" title="' . the_title_attribute(['echo' => false]) . '" >';
     printf(

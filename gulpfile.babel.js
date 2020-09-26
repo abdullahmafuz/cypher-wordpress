@@ -7,12 +7,20 @@ import gulpif from 'gulp-if';
 import imagemin from 'gulp-imagemin';
 import del from 'del';
 import webpack from 'webpack-stream';
+import uglify from 'gulp-uglify';
+import named from 'vinyl-named';
+import browserSync from 'browser-sync';
+import zip from 'gulp-zip';
+import replace from 'gulp-replace';
+import info from './package.json'
+
+const server = browserSync.create();
 
 const  PRODUCTION = yargs.argv.prod;
 
 const paths = {
   styles:{
-    src: ['src/assets/scss/bundle.scss'],
+    src: ['src/assets/scss/bundle.scss', 'src/assets/scss/admin.scss'],
     dest: 'dist/assets/css'
   },
   images:{
@@ -20,13 +28,33 @@ const paths = {
     dest: 'dist/assets/images'
   },
   scripts:{
-    src: 'src/assets/js/bundle.js',
+    src: ['src/assets/js/bundle.js', 'src/assets/js/admin.js'],
     dest: 'dist/assets/js'
   },
   other:{
     src: ['src/assets/**/*', '!src/assets/{images,js,scss}', '!src/assets/{images.js,scss}/**/*'],
     dest: 'dist/assets'
+  },
+  package: {
+    src: [
+      '**/*', '!.vscode', '!node_modules{,/**}', '!packaged{,/**', '!src{,/**}', '!.babelrc',
+      '!.gitignore', '!gulpfile.babel.js', '!package.json', '!package-lock.js'
+    ],
+    dest: 'packaged'
   }
+}
+
+export const runServer = (done) =>{
+    server.init({
+      proxy: "http://localhost:8888/wordpress/"
+    });
+    done()
+
+}
+
+export const reload = (done) => {
+  server.reload();
+  done()
 }
 
 export const clean = () => del(["dist"])
@@ -46,8 +74,11 @@ export const images = ()=>{
 
 export const watch = ()=>{
   gulp.watch('src/assets/scss/**/*.scss', styles);
+  gulp.watch('src/assets/js/**/*.js', scripts)
   gulp.watch(paths.images.src, images);
   gulp.watch(paths.other.src, copy);
+  //watch for all file change and reload the browser
+  gulp.watch('**', reload)
 }
 
 export const copy = ()=>{
@@ -57,6 +88,7 @@ export const copy = ()=>{
 
 export const scripts = () =>{
   return gulp.src(paths.scripts.src)
+         .pipe(named())
          .pipe(webpack({
            module: {
             rules:[
@@ -73,14 +105,26 @@ export const scripts = () =>{
              ]
            },
            output: {
-            filename: 'bundle.js',
+            filename: '[name].js',
           },
-           
+          externals: {
+            jquery: 'jQuery'
+          },
+          devtool: !PRODUCTION ? 'inline-source-map' : false
          }))
+         .pipe(gulpif(PRODUCTION, uglify()))
          .pipe(gulp.dest(paths.scripts.dest))
 }
 
-export const dev = series(clean, parallel(styles, images, copy), watch)
-export const build = series(clean, parallel(styles, images, copy))
+export const compress = () => {
+  return gulp.src(paths.package.src)
+          .pipe(replace('__themename', info.name))
+          .pipe(zip(`${info.name}.zip`))
+          .pipe(gulp.dest(paths.package.dest));
+}
+
+export const dev = series(clean, parallel(styles, scripts, images, copy), runServer, watch)
+export const build = series(clean, parallel(styles, scripts, images, copy))
+export const bundle =  gulp.series(build, compress)
 
 export default dev;

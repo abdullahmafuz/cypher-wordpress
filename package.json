@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "gulp",
-    "build": "gulp build --prod"
+    "build": "gulp build --prod",
+    "bundle": "gulp bundle --prod"
   },
   "author": "Abdullah",
   "license": "ISC",
@@ -17,13 +18,18 @@
     "@babel/preset-env": "^7.11.5",
     "@babel/register": "^7.11.5",
     "babel-loader": "^8.1.0",
+    "browser-sync": "^2.26.12",
     "del": "^5.1.0",
     "gulp": "^4.0.2",
     "gulp-clean-css": "^4.3.0",
     "gulp-if": "^3.0.0",
     "gulp-imagemin": "^7.1.0",
+    "gulp-replace": "^1.0.0",
     "gulp-sass": "^4.1.0",
+    "gulp-uglify": "^3.0.2",
+    "gulp-zip": "^5.0.2",
     "node-sass": "^4.14.1",
+    "vinyl-named": "^1.1.0",
     "webpack-stream": "^6.1.0"
   },
   "dependencies": {

@@ -1,3 +1,4 @@
 
 import './components/slider';
-console.log("abdullah")
+import $ from 'jquery';
+
